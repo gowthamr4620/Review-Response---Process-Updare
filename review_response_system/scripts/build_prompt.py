@@ -142,10 +142,13 @@ Reviewer Name: {reviewer_name}
 Response Objective:
 {response_objective}
 {client_instructions_section}
-Mandatory Grounding Rule (this is the most important instruction in this prompt):
-- Your response MUST open by reacting to one specific, concrete detail from the review text - a product, a specific moment, an action, a place in the store, a specific word the customer used. Do not open with a general statement of gratitude or sentiment.
-- If there is no review text, ground the response in the rating and business name only - do not invent specifics.
-- A response that could be copy-pasted onto a different review with only the name changed has failed this instruction. Before finalizing, check: could this exact sentence apply to a different customer's review? If yes, rewrite it to be specific to this one.
+Greeting Rule:
+- Always start the response with a greeting that includes the reviewer's name (e.g., "Hi [Name],", "Hello [Name],", "Hey [Name],", "Dear [Name],"). Vary the greeting style across responses.
+
+Mandatory Grounding Rule:
+- After the greeting, react to one specific, concrete detail from the review text - a product, a specific moment, an action, a place in the store. Do NOT quote or echo the customer's exact words back to them (e.g., if they wrote "Good service", do not write '"Good service" — ...').
+- If there is no review text, ground the response in the rating and business context only - do not invent specifics.
+- A response that could be copy-pasted onto a different review with only the name changed has failed this instruction.
 
 Rating Interpretation:
 - 1-2 stars: Acknowledge the customer's feelings briefly, show care, and guide them to contact support for resolution. Be concise - do not write extended apologies or elaborate on the problem. The priority is to move the conversation off the public thread.
@@ -158,7 +161,7 @@ Handling Mixed Signals:
 - If the sentiment and rating don't fully align, address the customer's words naturally without calling attention to the mismatch.
 {keyword_section}
 Content Requirements:
-- Address the reviewer by name{" (required)" if config.must_include_reviewer_name else ""} - but do not always open the sentence with the name; vary where it appears.
+- The reviewer's name must appear in the greeting. It may also appear naturally elsewhere in the response.
 - Reference the business name naturally{" (required)" if config.must_include_business_name else ", if it fits"}, using a shortened form rather than its full registered name.
 - Match the emotional sentiment expressed by the customer.
 - Stay in character as the persona above - do not slip into a generic corporate voice.
@@ -170,11 +173,12 @@ Things to Strictly Avoid:
 - Do not repeat staff names mentioned in the review, even positively.
 - Do not paraphrase the review back to the customer.
 - Do not make promises that are not supported by the review context.
-- Do not open with "Hi [Name]" followed immediately by "Thank you" or "Thanks for" - vary the opening structure itself, not just the wording.
+- Do not follow the greeting immediately with "Thank you for sharing" or "Thanks for your review" every time - vary what comes after the greeting.
+- Do not quote or echo the customer's exact words in quotation marks (e.g., writing "Good service" — that's... is lazy echoing).
 
 Response Variety:
-- Each response must feel distinct in structure, not just word choice. Vary sentence order, opening move, and where the name/thanks/CTA appear.
-- Do not default to predictable patterns like starting with a greeting-then-thanks, or ending with a "look forward to seeing you" style close.
+- Each response must feel distinct in structure, not just word choice. Vary what comes after the greeting - sometimes express thanks, sometimes react to a detail, sometimes ask a question, sometimes share something about the business.
+- Do not end every response with "look forward to seeing you" or similar. Vary closings.
 - Write as if this is the only response the customer will ever read from this business - make it feel personal, not templated.
 {previous_section}
 {tokens_section}
