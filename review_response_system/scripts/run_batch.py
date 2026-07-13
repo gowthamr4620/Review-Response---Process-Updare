@@ -24,11 +24,19 @@ Notes:
 import argparse
 import csv
 import os
+import ssl
 import sys
 import time
 import json
 import random
 import urllib.request
+
+
+def _ssl_context():
+    ca_bundle = os.environ.get("SSL_CERT_FILE") or os.environ.get("REQUESTS_CA_BUNDLE")
+    if ca_bundle and os.path.exists(ca_bundle):
+        return ssl.create_default_context(cafile=ca_bundle)
+    return None
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "config"))
 sys.path.insert(0, os.path.dirname(__file__))
@@ -63,7 +71,8 @@ def call_anthropic(prompt: str, api_key: str, model: str = "claude-sonnet-4-6") 
         },
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=60) as resp:
+    ctx = _ssl_context()
+    with urllib.request.urlopen(req, timeout=60, context=ctx) as resp:
         data = json.loads(resp.read())
     return "".join(b.get("text", "") for b in data.get("content", []) if b.get("type") == "text").strip()
 
@@ -83,7 +92,8 @@ def call_openai(prompt: str, api_key: str, model: str = "gpt-4o") -> str:
         },
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=60) as resp:
+    ctx = _ssl_context()
+    with urllib.request.urlopen(req, timeout=60, context=ctx) as resp:
         data = json.loads(resp.read())
     return data["choices"][0]["message"]["content"].strip()
 
