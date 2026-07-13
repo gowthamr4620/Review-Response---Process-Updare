@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+review_response_system/output/*.csv
+review_response_system/output/*.xlsx
