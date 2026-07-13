@@ -169,6 +169,7 @@ def main():
     parser.add_argument("--model", default=None, help="Override default model name")
     parser.add_argument("--sample", type=int, default=None, help="Sample N reviews per client")
     parser.add_argument("--client", default=None, help="Run only this client key (default: all)")
+    parser.add_argument("--format", choices=["csv", "xlsx"], default="xlsx", help="Output format (default: xlsx)")
     args = parser.parse_args()
 
     if args.provider == "anthropic":
@@ -186,18 +187,28 @@ def main():
 
     clients_to_run = {args.client: CLIENTS[args.client]} if args.client else CLIENTS
 
+    ext = args.format
+
     all_results = []
     for client_key, client_entry in clients_to_run.items():
         client_results = run_for_client(client_key, client_entry, args.provider, api_key, args.sample, model)
         if client_results:
-            out_path = os.path.join(os.path.dirname(__file__), "..", "output", f"{client_key}_output.csv")
-            pd.DataFrame(client_results).to_csv(out_path, index=False)
+            out_path = os.path.join(os.path.dirname(__file__), "..", "output", f"{client_key}_output.{ext}")
+            df_out = pd.DataFrame(client_results)
+            if ext == "xlsx":
+                df_out.to_excel(out_path, index=False, engine="openpyxl")
+            else:
+                df_out.to_csv(out_path, index=False)
             print(f"[{client_key}] saved -> {out_path}")
         all_results.extend(client_results)
 
     if all_results:
-        combined_path = os.path.join(os.path.dirname(__file__), "..", "output", "combined_output.csv")
-        pd.DataFrame(all_results).to_csv(combined_path, index=False)
+        combined_path = os.path.join(os.path.dirname(__file__), "..", "output", f"combined_output.{ext}")
+        df_all = pd.DataFrame(all_results)
+        if ext == "xlsx":
+            df_all.to_excel(combined_path, index=False, engine="openpyxl")
+        else:
+            df_all.to_csv(combined_path, index=False)
         print(f"Combined -> {combined_path}")
 
 
