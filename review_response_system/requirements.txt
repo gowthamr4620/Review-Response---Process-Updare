@@ -1,0 +1,2 @@
+# No third-party dependencies — the LLM call uses urllib from the
+# standard library, matching the rest of this repo's lightweight scripts.
