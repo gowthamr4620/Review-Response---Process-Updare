@@ -5,12 +5,14 @@ Signature & Customer Support Details — builds the prompt, calls the LLM,
 and prints the generated response.
 
 Usage:
-    export OPENAI_API_KEY=sk-...
+    export OPENAI_API_KEY=sk-...          # --provider openai (default)
+    export ANTHROPIC_API_KEY=sk-ant-...   # --provider anthropic
     python -m review_response_system.cli \\
         --business examples/business_info.json \\
         --review examples/review_details.json \\
         --keywords examples/keywords.json \\
-        --support examples/support_details.json
+        --support examples/support_details.json \\
+        --provider anthropic
 
 Pass --dry-run to print the built prompt and sampling params instead of
 calling the LLM (useful for reviewing the prompt before spending a call).
@@ -22,7 +24,7 @@ import argparse
 import json
 import sys
 
-from .core.generate_response import generate_review_response
+from .core.generate_response import DEFAULT_MODELS, generate_review_response
 from .core.models import (
     AIResponseLengthType,
     BusinessInfo,
@@ -77,15 +79,17 @@ def main() -> None:
     parser.add_argument("--review", required=True, help="Path to Review Details JSON")
     parser.add_argument("--keywords", default=None, help="Path to Keywords JSON")
     parser.add_argument("--support", default=None, help="Path to Signature & Customer Support Details JSON")
-    parser.add_argument("--model", default="gpt-4.1-mini", help="OpenAI model to use")
+    parser.add_argument("--provider", choices=list(DEFAULT_MODELS), default="openai", help="LLM provider to call")
+    parser.add_argument("--model", default=None, help="Override the provider's default model")
     parser.add_argument("--dry-run", action="store_true", help="Print the built prompt instead of calling the LLM")
     args = parser.parse_args()
 
     request = _build_request(args.business, args.review, args.keywords, args.support)
+    model = args.model or DEFAULT_MODELS[args.provider]
 
     if args.dry_run:
-        chat_request = build_review_response_prompt(request, model=args.model)
-        print(f"--- model: {chat_request.model} ---")
+        chat_request = build_review_response_prompt(request, model=model)
+        print(f"--- provider: {args.provider}  model: {chat_request.model} ---")
         print(f"temperature={chat_request.temperature} max_tokens={chat_request.max_tokens} "
               f"frequency_penalty={chat_request.frequency_penalty} presence_penalty={chat_request.presence_penalty}")
         print("--- prompt ---")
@@ -93,7 +97,7 @@ def main() -> None:
         return
 
     try:
-        response_text = generate_review_response(request, model=args.model)
+        response_text = generate_review_response(request, model=model, provider=args.provider)
     except Exception as exc:  # surfaced to the caller, not swallowed
         print(f"ERROR: {exc}", file=sys.stderr)
         sys.exit(1)
