@@ -12,6 +12,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import List, Optional
 
+from .tone import Tone
+
 
 class AIResponseLengthType(str, Enum):
     CONCISE = "Concise"
@@ -32,6 +34,10 @@ class ReviewDetails:
     rating: int
     review: Optional[str] = None
     ai_response_length_type: AIResponseLengthType = AIResponseLengthType.DEFAULT
+    locked_tone: Optional[Tone] = None
+    """If set, the prompt pins this tone instead of letting the model select
+    one from the review content — e.g. for a caller-defined rating->tone
+    policy. Leave unset to keep the default model-selected behavior."""
 
     def __post_init__(self) -> None:
         if not 1 <= self.rating <= 5:

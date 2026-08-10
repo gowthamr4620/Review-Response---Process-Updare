@@ -27,6 +27,7 @@ from typing import List
 from .keyword_matcher import get_top_matching_keywords
 from .models import AIResponseLengthType, ReviewResponseRequest
 from .sentiment import ReviewSentimentBand, get_sentiment_band
+from .tone import TONE_DESCRIPTIONS, Tone
 
 
 @dataclass
@@ -78,6 +79,19 @@ Choose the single tone that best matches the review content and customer sentime
 If the review is negative (1-2 stars), temper the selected tone's energy so it does not
 read as celebratory or dismissive of the complaint.
 Do not mention the selected tone in the response."""
+
+def _locked_tone_instruction(tone: Tone) -> str:
+    return f"""\
+Use the following tone for this response — it has already been selected for this review \
+and must not be changed or second-guessed:
+
+- {tone.value}:
+  {TONE_DESCRIPTIONS[tone]}
+
+If the review is negative (1-2 stars), temper this tone's energy so it does not read as
+celebratory or dismissive of the complaint.
+Do not mention the selected tone in the response."""
+
 
 GUARDRAIL_INSTRUCTION = """\
 Non-negotiable response rules:
@@ -231,9 +245,13 @@ def build_review_response_prompt(
     review_section = _review_section(request)
     tokens_line = request.support_details.as_tokens_line()
 
+    tone_instruction = (
+        _locked_tone_instruction(details.locked_tone) if details.locked_tone else TONE_INSTRUCTION
+    )
+
     prompt_parts = [
         base_prompt,
-        TONE_INSTRUCTION,
+        tone_instruction,
         sentiment_instruction,
         review_section,
         settings.instruction,

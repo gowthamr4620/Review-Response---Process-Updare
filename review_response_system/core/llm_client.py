@@ -78,17 +78,24 @@ def call_anthropic(request: ChatCompletionRequest, api_key: str | None = None, t
     if not api_key:
         raise LLMRequestError("ANTHROPIC_API_KEY is not set and no api_key was provided.")
 
-    data = _post_json(
-        ANTHROPIC_MESSAGES_URL,
-        body={
-            "model": request.model,
-            "max_tokens": request.max_tokens,
-            "temperature": request.temperature,
-            "messages": [{"role": "user", "content": request.prompt}],
-        },
-        headers={"x-api-key": api_key, "anthropic-version": ANTHROPIC_VERSION},
-        timeout=timeout,
-    )
+    headers = {"x-api-key": api_key, "anthropic-version": ANTHROPIC_VERSION}
+    body = {
+        "model": request.model,
+        "max_tokens": request.max_tokens,
+        "temperature": request.temperature,
+        "messages": [{"role": "user", "content": request.prompt}],
+    }
+
+    try:
+        data = _post_json(ANTHROPIC_MESSAGES_URL, body=body, headers=headers, timeout=timeout)
+    except LLMRequestError as exc:
+        # Some model families (e.g. reasoning-tuned ones) reject `temperature`
+        # outright rather than silently ignoring it — retry without it.
+        if "temperature" in str(exc) and "deprecated" in str(exc):
+            body.pop("temperature")
+            data = _post_json(ANTHROPIC_MESSAGES_URL, body=body, headers=headers, timeout=timeout)
+        else:
+            raise
 
     try:
         return "".join(

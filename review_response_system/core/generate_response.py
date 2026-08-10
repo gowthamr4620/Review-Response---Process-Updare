@@ -9,7 +9,7 @@ from .prompt_builder import build_review_response_prompt
 
 DEFAULT_MODELS = {
     "openai": "gpt-4.1-mini",
-    "anthropic": "claude-sonnet-5",
+    "anthropic": "claude-haiku-4-5-20251001",
 }
 
 
