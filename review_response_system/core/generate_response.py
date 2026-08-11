@@ -18,12 +18,13 @@ def generate_review_response(
     api_key: str | None = None,
     model: str | None = None,
     provider: str = "openai",
+    max_words: int | None = None,
 ) -> str:
     if provider not in DEFAULT_MODELS:
         raise ValueError(f"Unknown provider '{provider}'. Expected one of {list(DEFAULT_MODELS)}.")
 
     model = model or DEFAULT_MODELS[provider]
-    chat_request = build_review_response_prompt(request, model=model)
+    chat_request = build_review_response_prompt(request, model=model, max_words=max_words)
 
     if provider == "anthropic":
         return call_anthropic(chat_request, api_key=api_key)

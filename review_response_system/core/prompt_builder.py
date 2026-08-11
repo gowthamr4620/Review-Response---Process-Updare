@@ -160,6 +160,26 @@ def _prompt_settings(length_type: AIResponseLengthType, review_text_exists: bool
     )
 
 
+def _explicit_word_limit_settings(max_words: int, review_text_exists: bool) -> PromptSettings:
+    """Builds PromptSettings for a caller-computed word cap, bypassing the
+    fixed AIResponseLengthType ladder. Sampling params are pinned to the
+    Default bucket's values; max_tokens is sized generously off the word
+    cap since token count per word varies with punctuation/formatting."""
+    instruction = (
+        f"Craft a response based on the review content and rating within {max_words} words."
+        if review_text_exists
+        else f"Generate a personalized response based on the rating within {max_words} words."
+    )
+    return PromptSettings(
+        instruction=instruction,
+        keyword_count=2 if max_words <= 50 else 3,
+        frequency_penalty=0.9,
+        presence_penalty=0.8,
+        temperature=0.8,
+        max_tokens=max_words * 2 + 20,
+    )
+
+
 def _sentiment_instruction(band: ReviewSentimentBand, matched_keywords: List[str]) -> str:
     if not matched_keywords and band != ReviewSentimentBand.NEGATIVE:
         if band == ReviewSentimentBand.NEUTRAL:
@@ -222,12 +242,21 @@ def _review_section(request: ReviewResponseRequest) -> str:
 def build_review_response_prompt(
     request: ReviewResponseRequest,
     model: str = "gpt-4.1-mini",
+    max_words: int | None = None,
 ) -> ChatCompletionRequest:
+    """max_words, if given, overrides the AIResponseLengthType-derived word
+    cap entirely — used when the word limit is computed per-review (e.g. a
+    proportional-to-review-length rule) rather than picked from the fixed
+    Concise/Default/Elaborate ladder."""
     details = request.review_details
     review_text_exists = details.review_text_exists
 
     sentiment_band = get_sentiment_band(details.rating)
-    settings = _prompt_settings(details.ai_response_length_type, review_text_exists)
+    settings = (
+        _explicit_word_limit_settings(max_words, review_text_exists)
+        if max_words is not None
+        else _prompt_settings(details.ai_response_length_type, review_text_exists)
+    )
 
     matched_keywords = (
         get_top_matching_keywords(details.review, request.keywords.approved_keywords, settings.keyword_count)

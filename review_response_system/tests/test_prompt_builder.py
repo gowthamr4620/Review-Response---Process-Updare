@@ -89,6 +89,14 @@ class TestBuildReviewResponsePrompt(unittest.TestCase):
         chat_request = build_review_response_prompt(_make_request())
         self.assertIn("Select the most appropriate tone", chat_request.prompt)
 
+    def test_max_words_override_replaces_length_type_instruction(self):
+        chat_request = build_review_response_prompt(
+            _make_request(ai_response_length_type=AIResponseLengthType.ELABORATE), max_words=27
+        )
+        self.assertIn("27 words", chat_request.prompt)
+        self.assertNotIn("150 words", chat_request.prompt)
+        self.assertEqual(chat_request.max_tokens, 27 * 2 + 20)
+
 
 if __name__ == "__main__":
     unittest.main()
