@@ -61,7 +61,8 @@ regardless of matches, per the guardrail in the prompt.
 ## Running it
 
 ```bash
-export OPENAI_API_KEY=sk-...
+export OPENAI_API_KEY=sk-...          # --provider openai (default)
+export ANTHROPIC_API_KEY=sk-ant-...   # --provider anthropic
 
 # Review the built prompt without spending a call:
 python -m review_response_system.cli \
@@ -71,17 +72,20 @@ python -m review_response_system.cli \
   --support review_response_system/examples/support_details.json \
   --dry-run
 
-# Generate a response for real:
+# Generate a response for real (defaults to OpenAI; pass --provider anthropic for Claude):
 python -m review_response_system.cli \
   --business review_response_system/examples/business_info.json \
   --review review_response_system/examples/review_details.json \
   --keywords review_response_system/examples/keywords.json \
-  --support review_response_system/examples/support_details.json
+  --support review_response_system/examples/support_details.json \
+  --provider anthropic
 ```
 
 Run from the repository root. `--keywords` and `--support` are optional —
 omit them for a business with no approved vocabulary or no support/signature
-details to include.
+details to include. Anthropic's Messages API has no equivalent for
+`frequency_penalty`/`presence_penalty`, so those two are dropped when calling
+Claude — `temperature` and `max_tokens` carry over as-is.
 
 ## Programmatic use
 
@@ -102,7 +106,8 @@ request = ReviewResponseRequest(
     support_details=SignatureSupportDetails(signature="Regards, Candere"),
 )
 
-response_text = generate_review_response(request)  # calls OpenAI
+response_text = generate_review_response(request)  # calls OpenAI by default
+response_text = generate_review_response(request, provider="anthropic")  # calls Claude instead
 ```
 
 ## Tests

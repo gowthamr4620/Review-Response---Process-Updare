@@ -9,6 +9,7 @@ from ..core.models import (
     SignatureSupportDetails,
 )
 from ..core.prompt_builder import build_review_response_prompt
+from ..core.tone import Tone
 
 
 def _make_request(**review_overrides) -> ReviewResponseRequest:
@@ -77,6 +78,24 @@ class TestBuildReviewResponsePrompt(unittest.TestCase):
         request.support_details = SignatureSupportDetails()
         chat_request = build_review_response_prompt(request)
         self.assertNotIn("Include ", chat_request.prompt)
+
+    def test_locked_tone_replaces_model_selected_tone_instruction(self):
+        chat_request = build_review_response_prompt(_make_request(locked_tone=Tone.EMPATHETIC, rating=1))
+        self.assertIn("has already been selected for this review", chat_request.prompt)
+        self.assertIn("Empathetic:", chat_request.prompt)
+        self.assertNotIn("Select the most appropriate tone", chat_request.prompt)
+
+    def test_default_tone_instruction_lets_model_choose(self):
+        chat_request = build_review_response_prompt(_make_request())
+        self.assertIn("Select the most appropriate tone", chat_request.prompt)
+
+    def test_max_words_override_replaces_length_type_instruction(self):
+        chat_request = build_review_response_prompt(
+            _make_request(ai_response_length_type=AIResponseLengthType.ELABORATE), max_words=27
+        )
+        self.assertIn("27 words", chat_request.prompt)
+        self.assertNotIn("150 words", chat_request.prompt)
+        self.assertEqual(chat_request.max_tokens, 27 * 2 + 20)
 
 
 if __name__ == "__main__":
