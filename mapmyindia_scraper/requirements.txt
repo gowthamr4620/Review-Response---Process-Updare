@@ -1,0 +1,8 @@
+# Core - needed for every run.
+requests>=2.28
+openpyxl>=3.1
+
+# Optional - only for --browser, which renders client-side pages before
+# parsing them. Install with:
+#   pip install playwright && playwright install chromium
+# playwright>=1.40
