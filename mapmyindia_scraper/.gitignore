@@ -1,0 +1,4 @@
+.mappls_cache/
+raw/
+__pycache__/
+*.xlsx
