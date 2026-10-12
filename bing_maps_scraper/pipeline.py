@@ -14,7 +14,7 @@ from .fetchers import Fetcher
 from .models import Listing, Page
 from .parsers import parse
 
-URL_COLS = ("url", "link", "bing_url", "bing_link", "bing_maps_url", "bing maps link", "bing link")
+URL_COLS = ("url", "bingurl", "link", "bing_url", "bing_link", "bing_maps_url", "bing maps link", "bing link")
 
 
 def read_inputs(path: Path) -> pd.DataFrame:
@@ -30,8 +30,8 @@ def read_inputs(path: Path) -> pd.DataFrame:
     if col is None:
         raise SystemExit(f"No URL column found in {path}; name it 'url'. Columns: {list(df.columns)}")
     df = df.rename(columns={col: "url"})
-    df["url"] = df["url"].astype(str).str.strip()
-    return df[df["url"].str.startswith("http")].reset_index(drop=True)
+    df["url"] = df["url"].fillna("").astype(str).str.strip()
+    return df.reset_index(drop=True)  # blank/non-http rows are kept and reported as status "no_url"
 
 
 def _key(url: str) -> str:
@@ -66,6 +66,8 @@ def run(df: pd.DataFrame, fetcher: Fetcher | None, cache: Path, country: str = "
         workers: int = 4, refetch: bool = False, delay: float = 1.0) -> pd.DataFrame:
     """fetcher=None -> offline reparse of cached pages only."""
     def work(url: str) -> Listing:
+        if not url.startswith("http"):
+            return Listing(input_url=url, status="no_url", error="blank or non-http URL in input")
         if fetcher is None:
             page = _load(cache, url) or Page(url, error="not in cache (run scrape first)")
         else:

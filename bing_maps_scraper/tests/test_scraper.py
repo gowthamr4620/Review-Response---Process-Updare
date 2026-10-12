@@ -83,3 +83,13 @@ def test_pipeline_offline_reparse(tmp_path: Path):
     assert out.loc[0, "in_store_id"] == "S1" and out.loc[0, "status"] == "ok"
     paths = pipeline.write(out, tmp_path / "out")
     assert all(p.exists() for p in paths.values())
+
+
+def test_real_world_ss_ypid_format_and_blank_rows(tmp_path):
+    i = classify("https://www.bing.com/maps?ss=ypid.B9BE9228E9C4E0D5")
+    assert i["kind"] == "maps_place" and i["ypid"] == "B9BE9228E9C4E0D5"
+    inp = tmp_path / "in.csv"
+    pd.DataFrame({"businessId": ["1", "2"], "bingUrl": ["https://www.bing.com/maps?ss=ypid.AB12", None]}).to_csv(inp, index=False)
+    df = pipeline.read_inputs(inp)
+    out = pipeline.run(df, None, tmp_path / "c")
+    assert list(out["status"]) == ["failed", "no_url"] and list(out["in_businessId"]) == ["1", "2"]

@@ -35,9 +35,10 @@ def classify(url: str) -> dict:
     if "bing.com" not in host and not host.endswith("bing.net") and "binged.it" not in host:
         return info
 
+    # Observed formats: ?ss=ypid.<HEX>  |  ?ypid=YN123x456  |  ...&ss=ypid.YN873x...
     ypid = q.get("ypid") or ""
     if not ypid:
-        m = re.search(r"(YN\d+x\d+)", url)
+        m = re.search(r"ypid[.=]([A-Za-z0-9]+)", url, re.I) or re.search(r"(YN\d+x\d+)", url)
         ypid = m.group(1) if m else ""
     info["ypid"] = ypid
 
